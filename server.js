@@ -14,19 +14,9 @@ import expenseRoutes from './routes/expenses.js';
 //connectDB() → connects your server to MongoDB before starting the app.
 dotenv.config();
 
-let  isconnected =false;
-async function connectToDB() {
-    try{
-   connectDB();
-    }catch(err){
-        console.error(err)
-    }
+
+connectDB();
     
-}
-app.use((req,res,next)=>{
-    if(!isconnected) connectToDB()
-    next();
-})
 const app = express();
 // middleware :Allows your server to understand JSON requests (like { "title": "Buy milk" }).
 app.use(express.json());
@@ -37,12 +27,12 @@ app.use(cookieParser());
 //credentials: true → allows cookies, tokens, or authentication headers to be sent.
 //Without CORS → Browser blocks request.
 //With CORS → React frontend can call backend APIs.
-app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
+app.use(cors({ origin: `http://localhost:5173`, credentials: true }));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/expenses', expenseRoutes);
 //app.listen(process.env.PORT || 5000, () => console.log('Server running'));
-// app.listen(process.env.PORT || 5000, () => console.log('Server running'));
+ app.listen(process.env.PORT || 5000, () => console.log('Server running'));
 
-module.exports=app
+
