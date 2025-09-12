@@ -1,5 +1,5 @@
 import express from 'express';
-import { register, login, getMe } from '../controllers/authController.js';
+import { register, login, getMe, forgotPassword, resetPassword } from '../controllers/authController.js';
 import { protect } from '../middleware/auth.js';
 
 // creating a router using express
@@ -13,5 +13,10 @@ router.post('/login', login);
 // getme
 //rotected by protect middleware → only accessible if the request has a valid token.
 //getMe controller uses req.user (set by middleware) to return user info.
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password/:token", resetPassword); // reset route
+import express from 'express';
+
+
 router.get('/me', protect, getMe);
 export default router;
