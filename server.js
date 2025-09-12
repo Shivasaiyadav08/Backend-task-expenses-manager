@@ -27,8 +27,8 @@ app.use(cookieParser());
 //credentials: true → allows cookies, tokens, or authentication headers to be sent.
 //Without CORS → Browser blocks request.
 //With CORS → React frontend can call backend APIs.
-//app.use(cors({ origin: `https://frontend-task-expense-manager.vercel.app`, credentials: true }));
-app.use(cors({ origin: `http://localhost:5173`, credentials: true }));
+app.use(cors({ origin: `https://frontend-task-expense-manager.vercel.app`, credentials: true }));
+//app.use(cors({ origin: `http://localhost:5173`, credentials: true }));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);

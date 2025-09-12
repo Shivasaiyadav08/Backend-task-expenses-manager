@@ -14,8 +14,8 @@ router.post('/login', login);
 //rotected by protect middleware → only accessible if the request has a valid token.
 //getMe controller uses req.user (set by middleware) to return user info.
 router.post("/forgot-password", forgotPassword);
-router.post("/reset-password/:token", resetPassword); // reset route
-import express from 'express';
+router.put("/reset-password/:token", resetPassword); // reset route
+
 
 
 router.get('/me', protect, getMe);

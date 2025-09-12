@@ -2,10 +2,11 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import crypto from 'crypto';
-import nodemailer from 'nodemailer';
+import nodemailer from "nodemailer"
 import validator from 'validator';
 
-
+import dotenv from "dotenv";
+dotenv.config();
 
 // Register
 export const register = async (req, res) => {
@@ -70,52 +71,57 @@ export const getMe = async (req, res) => {
   res.json({ id: req.user._id, name: req.user.name, email: req.user.email });
 };
 
+
 export const forgotPassword = async (req, res) => {
-  const { email } = req.body;
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-  const user = await User.findOne({ email });
-  if (!user) return res.status(404).json({ message: 'User not found' });
+    const resetToken = crypto.randomBytes(20).toString("hex");
+    user.resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+    user.resetPasswordExpire = Date.now() + 60 * 60 * 1000; // 1 hour
+    await user.save();
 
-  // Create reset token
-  const resetToken = crypto.randomBytes(20).toString('hex');
+   const resetUrl = `https://frontend-task-expense-manager.vercel.app/reset-password/${resetToken}`;
+ 
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: { user: process.env.EMAIL, pass: process.env.EMAIL_PASSWORD },
+    });
 
-  // Hash token and save to DB
-  user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-  user.resetPasswordExpire = Date.now() + 3600000; // 1 hour
-  await user.save();
+    await transporter.sendMail({
+      from: process.env.EMAIL,
+      to: user.email,
+      subject: "Password Reset Request",
+      text: `Click the link to reset your password: ${resetUrl}`,
+    });
 
-  // Send email
-  const resetUrl = `http://localhost:3000/reset-password/${resetToken}`;
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: { user: process.env.EMAIL, pass: process.env.EMAIL_PASSWORD },
-  });
-
-  const mailOptions = {
-    to: user.email,
-    subject: 'Password Reset Request',
-    text: `Reset your password using this link: ${resetUrl}`,
-  };
-
-  transporter.sendMail(mailOptions, (err) => {
-    if (err) return res.status(500).json({ message: 'Email could not be sent' });
-    res.status(200).json({ message: 'Email sent successfully' });
-  });
+    res.status(200).json({ message: "Reset link sent successfully" });
+  } catch (err) {
+    console.error("ForgotPassword error:", err);
+    res.status(500).json({ message: "Email could not be sent", error: err.message });
+  }
 };
 
+// RESET PASSWORD
 export const resetPassword = async (req, res) => {
-  const resetToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+  const { token } = req.params;
+  const { password } = req.body;
+
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
   const user = await User.findOne({
-    resetPasswordToken: resetToken,
+    resetPasswordToken: hashedToken,
     resetPasswordExpire: { $gt: Date.now() },
   });
 
-  if (!user) return res.status(400).json({ message: 'Invalid or expired token' });
+  if (!user) return res.status(400).json({ message: "Invalid or expired token" });
 
-  user.password = req.body.password;
+ user.password = await bcrypt.hash(password, 10); // hash if using bcrypt
   user.resetPasswordToken = undefined;
   user.resetPasswordExpire = undefined;
   await user.save();
 
-  res.status(200).json({ message: 'Password reset successful' });
+  res.status(200).json({ message: "Password reset successful" });
 };
